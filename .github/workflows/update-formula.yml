@@ -1,0 +1,77 @@
+name: Update Formula
+
+on:
+  repository_dispatch:
+    types: [gw-release]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. v0.0.1)'
+        required: true
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get release version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            VERSION="${{ github.event.client_payload.version }}"
+          else
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "version_number=${VERSION#v}" >> $GITHUB_OUTPUT
+
+      - name: Download and calculate SHA256
+        id: sha256
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Download and calculate SHA256 for each platform
+          echo "Calculating SHA256 for macOS ARM64..."
+          SHA_MACOS_ARM64=$(curl -sL https://github.com/wasabeef/git-workers/releases/download/${VERSION}/gw-Darwin-aarch64.tar.gz | sha256sum | cut -d' ' -f1)
+          echo "sha256_macos_arm64=${SHA_MACOS_ARM64}" >> $GITHUB_OUTPUT
+
+          echo "Calculating SHA256 for macOS x86_64..."
+          SHA_MACOS_X64=$(curl -sL https://github.com/wasabeef/git-workers/releases/download/${VERSION}/gw-Darwin-x86_64.tar.gz | sha256sum | cut -d' ' -f1)
+          echo "sha256_macos_x64=${SHA_MACOS_X64}" >> $GITHUB_OUTPUT
+
+          echo "Calculating SHA256 for Linux x86_64..."
+          SHA_LINUX_X64=$(curl -sL https://github.com/wasabeef/git-workers/releases/download/${VERSION}/gw-Linux-x86_64.tar.gz | sha256sum | cut -d' ' -f1)
+          echo "sha256_linux_x64=${SHA_LINUX_X64}" >> $GITHUB_OUTPUT
+
+      - name: Update Formula
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          VERSION_NUM="${{ steps.version.outputs.version_number }}"
+
+          # Update version
+          sed -i "s/version \"[^\"]*\"/version \"${VERSION_NUM}\"/" Formula/gw.rb
+
+          # Update URLs
+          sed -i "s|releases/download/v[^/]*/|releases/download/${VERSION}/|g" Formula/gw.rb
+
+          # Update SHA256 hashes
+          sed -i "/gw-Darwin-aarch64.tar.gz/,/sha256/ s/sha256 \"[^\"]*\"/sha256 \"${{ steps.sha256.outputs.sha256_macos_arm64 }}\"/" Formula/gw.rb
+          sed -i "/gw-Darwin-x86_64.tar.gz/,/sha256/ s/sha256 \"[^\"]*\"/sha256 \"${{ steps.sha256.outputs.sha256_macos_x64 }}\"/" Formula/gw.rb
+          sed -i "/gw-Linux-x86_64.tar.gz/,/sha256/ s/sha256 \"[^\"]*\"/sha256 \"${{ steps.sha256.outputs.sha256_linux_x64 }}\"/" Formula/gw.rb
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update gw to ${{ steps.version.outputs.version }}"
+          title: "Update gw to ${{ steps.version.outputs.version }}"
+          body: |
+            Updates the gw formula to version ${{ steps.version.outputs.version }}.
+
+            SHA256 checksums:
+            - macOS ARM64: `${{ steps.sha256.outputs.sha256_macos_arm64 }}`
+            - macOS x86_64: `${{ steps.sha256.outputs.sha256_macos_x64 }}`
+            - Linux x86_64: `${{ steps.sha256.outputs.sha256_linux_x64 }}`
+          branch: update-gw-${{ steps.version.outputs.version }}
+          delete-branch: true
