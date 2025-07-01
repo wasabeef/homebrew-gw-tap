@@ -1,22 +1,22 @@
 class Gw < Formula
   desc "Interactive Git worktree manager"
   homepage "https://github.com/wasabeef/git-workers"
-  version "0.3.0"
+  version "0.4.0"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/wasabeef/git-workers/releases/download/v0.3.0/gw-Darwin-aarch64.tar.gz"
-      sha256 "1131f76276003c95da9555898b64ba178623412b67a898a9013e2398bf8bb8bf"
+      url "https://github.com/wasabeef/git-workers/releases/download/v0.4.0/gw-Darwin-aarch64.tar.gz"
+      sha256 "dfd63cf97b50d9d743165a886bfdf158975e80de2342c4b8149779c92bbe648b"
     else
-      url "https://github.com/wasabeef/git-workers/releases/download/v0.3.0/gw-Darwin-x86_64.tar.gz"
-      sha256 "e6fae89b7157bb3ddc9be30f8b945dea088e6af17929bb1987baa094c62474e3"
+      url "https://github.com/wasabeef/git-workers/releases/download/v0.4.0/gw-Darwin-x86_64.tar.gz"
+      sha256 "731f7b0d6b1879aae100c3b23ff1f5c24b7a497c8f371a0ab1d011857da8d575"
     end
   end
 
   on_linux do
-    url "https://github.com/wasabeef/git-workers/releases/download/v0.3.0/gw-Linux-x86_64.tar.gz"
-    sha256 "26a184401c64cf461ccf6d456a306e15ddc864ada3587f0afab4997e8da94dee"
+    url "https://github.com/wasabeef/git-workers/releases/download/v0.4.0/gw-Linux-x86_64.tar.gz"
+    sha256 "6ae7a753e02c3c8e95baee9d695704c6738326d319163433cbb4ee737ecd841a"
   end
 
   def install
@@ -41,4 +41,4 @@ class Gw < Formula
   end
 end
 
-# Updated: 2025-06-25T13:55:46Z
+# Updated: 2025-07-01T02:21:03Z
